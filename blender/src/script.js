@@ -4,17 +4,40 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import gsap from "gsap";
+const tl = gsap.timeline();
 
-const gltfLoader = new GLTFLoader();
+const loadingManager = new THREE.LoadingManager();
+const gltfLoader = new GLTFLoader(loadingManager);
+
+loadingManager.onStart = function (url, item, total) {
+  console.log(`started loading ${url}`);
+  tl.pause();
+};
+// GSAP timeline
+
+const progressBar = document.getElementById("progress-bar");
+loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+  progressBar.value = (itemsLoaded / itemsTotal) * 100;
+};
+
+loadingManager.onLoad = function () {
+  gsap.to(".progress-bar-container", {
+    opacity: 0,
+    display: "none",
+    duration: 1,
+  });
+  tl.resume();
+};
+
+loadingManager.onError = function (url) {
+  console.error(`Error loading ${url}`);
+};
 
 // Debug
 const gui = new dat.GUI();
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
-
-// GSAP timeline
-const tl = gsap.timeline();
 
 // Phone
 gltfLoader.load("blenderPhone.gltf", (gltf) => {
@@ -30,11 +53,12 @@ gltfLoader.load("blenderPhone.gltf", (gltf) => {
   phoneGUI.add(gltf.scene.rotation, "z").min(0).max(9);
 
   // gsap
-  tl.to(gltf.scene.rotation, { y: 4.7, duration: 1 });
-  tl.to(gltf.scene.scale, { x: 0.2, y: 0.2, z: 0.2, duration: 1 }, "-=1");
+  tl.to(".webgl", { opacity: 1, duration: 1, delay: 0.3 });
+  tl.to(gltf.scene.rotation, { y: 4.7, duration: 1 }, "<");
+  tl.to(gltf.scene.scale, { x: 0.2, y: 0.2, z: 0.2, duration: 1 }, "<");
   tl.to(gltf.scene.position, { x: -0.5 });
-  tl.to(gltf.scene.rotation, { y: 5.4, duration: 0.7 }, "1");
-  tl.to(gltf.scene.scale, { x: 0.25, y: 0.25, z: 0.25, duration: 1 }, "1");
+  tl.to(gltf.scene.rotation, { y: 5.4, duration: 0.7 }, "<");
+  tl.to(gltf.scene.scale, { x: 0.25, y: 0.25, z: 0.25, duration: 1 }, "<");
   tl.to(".container", { opacity: 1, top: "40%", duration: 1 }, "<");
 });
 
